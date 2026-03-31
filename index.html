@@ -1042,7 +1042,6 @@ async function handleWaitlist(e){
   const succ = document.getElementById('wl-success');
   const err  = document.getElementById('wl-error');
   const email = form.querySelector('[name="email"]').value;
-  // Get selected interest from display radios
   const interestChecked = document.querySelector('[name="interest-display"]:checked');
   const interest = interestChecked ? interestChecked.value : 'individual';
 
@@ -1050,32 +1049,37 @@ async function handleWaitlist(e){
   err.style.display = 'none';
 
   try {
-    // First try Netlify Function (if deployed)
-    let saved = false;
-    try {
-      const res = await fetch('/.netlify/functions/subscribe', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ email, interest })
-      });
-      if(res.ok) saved = true;
-    } catch(_){}
+    // PRIMARY: always submit to Netlify Forms
+    // Must use URL-encoded body — multipart/form-data is not supported by Netlify Forms AJAX
+    const params = new URLSearchParams();
+    params.append('form-name', 'waitlist');
+    params.append('email', email);
+    params.append('interest', interest);
 
-    // Fallback: submit to Netlify Forms (works on Netlify deploy)
-    if(!saved){
-      const fd = new FormData();
-      fd.append('form-name','waitlist');
-      fd.append('email', email);
-      fd.append('interest', interest);
-      const r = await fetch('/', {method:'POST', body: fd});
-      if(r.ok) saved=true;
-    }
+    const r = await fetch('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString()
+    });
 
-    form.style.display='none';
-    document.querySelector('.wl-type').style.display='none';
-    succ.style.display='block';
-  } catch(ex){
-    btn.disabled=false; btn.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg> Claim My Spot';
-    err.style.display='block';
+    if (!r.ok) throw new Error('Form submission failed: ' + r.status);
+
+    // SECONDARY: also call the serverless function if a backend is configured
+    // Fire-and-forget — don't let it block the success state
+    fetch('/.netlify/functions/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, interest })
+    }).catch(() => {});
+
+    form.style.display = 'none';
+    document.querySelector('.wl-type').style.display = 'none';
+    succ.style.display = 'block';
+
+  } catch(ex) {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg> Claim My Spot';
+    err.style.display = 'block';
     console.error(ex);
   }
 }
