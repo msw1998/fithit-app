@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitHit — The Smart Boxing Kiosk</title>
+  <meta name="description" content="FitHit is the smart boxing kiosk that tracks every punch, coaches every move, and syncs your stats to the cloud. Join the waitlist for early access." />
+  <!-- Netlify Forms detection -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=Roboto+Mono:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ── RESET & BASE ───────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body { font-family: 'Inter', sans-serif; background: #0D0B1A; color: #E8E6F8; overflow-x: hidden; line-height: 1.6; }
+
+    /* ── TOKENS ─────────────────────────────────────────────── */
+    :root {
+      --navy:     #26215C;
+      --indigo:   #3C3489;
+      --purple:   #7F77DD;
+      --lavender: #AFA9EC;
+      --dark:     #1A1730;
+      --deeper:   #0D0B1A;
+      --surface:  rgba(255,255,255,0.04);
+      --border:   rgba(127,119,221,0.2);
+      --border-h: rgba(127,119,221,0.5);
+      --glow:     rgba(127,119,221,0.22);
+      --glow-s:   rgba(127,119,221,0.45);
+      --hit:      #5DCAA5;
+      --miss:     #D85A30;
+      --duck:     #9F3FCC;
+      --ease:     cubic-bezier(0.16,1,0.3,1);
+      --r:        14px;
+    }
+
+    /* ── SCROLL PROGRESS ────────────────────────────────────── */
+    #progress-bar { position: fixed; top: 0; left: 0; height: 2px; width: 0; background: linear-gradient(90deg, var(--indigo), var(--purple), var(--lavender)); z-index: 9999; }
+
+    /* ── AMBIENT ORBS ───────────────────────────────────────── */
+    .orb { position: absolute; border-radius: 50%; filter: blur(90px); pointer-events: none; animation: drift 18s ease-in-out infinite; }
+    .o1  { width:600px;height:600px;background:var(--indigo);opacity:0.1;top:-120px;left:-80px;animation-delay:0s; }
+    .o2  { width:400px;height:400px;background:var(--purple);opacity:0.08;top:40%;right:-60px;animation-delay:-7s; }
+    .o3  { width:300px;height:300px;background:var(--navy);opacity:0.12;bottom:10%;left:30%;animation-delay:-14s; }
+    @keyframes drift { 0%,100%{transform:translate(0,0)} 33%{transform:translate(40px,-30px)} 66%{transform:translate(-25px,35px)} }
+
+    /* ── NAV ────────────────────────────────────────────────── */
+    nav { position:fixed;top:0;left:0;right:0;z-index:1000;padding:20px 48px;display:flex;align-items:center;justify-content:space-between;transition:all .4s var(--ease); }
+    nav.scrolled { background:rgba(13,11,26,.9);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 48px; }
+    .nav-logo { display:flex;align-items:center;gap:10px;text-decoration:none; }
+    .nav-logo img { height:32px; }
+    .nav-logo-txt { font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;letter-spacing:.06em;color:#fff; }
+    .nav-links { list-style:none;display:flex;gap:36px; }
+    .nav-links a { color:var(--lavender);text-decoration:none;font-size:13px;font-weight:500;letter-spacing:.04em;transition:color .2s; }
+    .nav-links a:hover { color:#fff; }
+    .nav-cta { background:linear-gradient(135deg,var(--indigo),var(--purple));color:#fff;border:none;padding:11px 22px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;letter-spacing:.04em;transition:all .3s var(--ease);box-shadow:0 0 20px var(--glow); }
+    .nav-cta:hover { transform:translateY(-2px);box-shadow:0 0 35px var(--glow-s); }
+    .hamburger { display:none;background:none;border:1px solid var(--border);color:var(--lavender);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:16px; }
+
+    /* ── SECTION UTILITY ────────────────────────────────────── */
+    .section { padding:96px 48px;max-width:1300px;margin:0 auto; }
+    .tag { display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--purple);margin-bottom:18px; }
+    .tag::before { content:'';display:block;width:18px;height:1px;background:var(--purple); }
+    h2.ttl { font-family:'Barlow Condensed',sans-serif;font-size:clamp(36px,5vw,64px);font-weight:900;line-height:.95;letter-spacing:-.01em;text-transform:uppercase;color:#fff;margin-bottom:18px; }
+    h2.ttl .acc { background:linear-gradient(135deg,var(--purple),var(--lavender));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
+    .sub { font-size:17px;color:var(--lavender);line-height:1.75;max-width:540px;font-weight:300; }
+
+    /* ── REVEAL ─────────────────────────────────────────────── */
+    .rv { opacity:0;transform:translateY(36px);transition:opacity .7s var(--ease),transform .7s var(--ease); }
+    .rv.on { opacity:1;transform:none; }
+    .d1{transition-delay:.1s} .d2{transition-delay:.2s} .d3{transition-delay:.3s}
+    .d4{transition-delay:.4s} .d5{transition-delay:.5s} .d6{transition-delay:.6s}
+
+    /* ── BUTTONS ────────────────────────────────────────────── */
+    .btn { display:inline-flex;align-items:center;gap:10px;padding:17px 30px;border-radius:8px;font-weight:700;font-size:15px;cursor:pointer;letter-spacing:.04em;text-decoration:none;border:none;transition:all .3s var(--ease); }
+    .btn-p { background:linear-gradient(135deg,var(--indigo),var(--purple));color:#fff;box-shadow:0 4px 28px var(--glow); }
+    .btn-p:hover { transform:translateY(-3px);box-shadow:0 8px 40px var(--glow-s); }
+    .btn-s { background:transparent;color:var(--lavender);border:1.5px solid var(--border); }
+    .btn-s:hover { border-color:var(--purple);color:#fff;background:rgba(127,119,221,.08); }
+    .btn-s svg,.btn-p svg { flex-shrink:0; }
+
+    /* ══════════════════════════════════════════════════════════
+       HERO
+    ══════════════════════════════════════════════════════════ */
+    #hero {
+      position:relative;min-height:100vh;display:flex;align-items:center;
+      padding:120px 48px 80px;overflow:hidden;
+      background:radial-gradient(ellipse 80% 60% at 50% -10%,var(--navy) 0%,transparent 70%),var(--deeper);
+    }
+    .hero-inner { display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;max-width:1300px;margin:0 auto;width:100%; }
+    .hero-badge { display:inline-flex;align-items:center;gap:8px;background:rgba(127,119,221,.1);border:1px solid var(--border);border-radius:100px;padding:6px 16px;margin-bottom:26px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--purple); }
+    .badge-dot { width:6px;height:6px;background:var(--purple);border-radius:50%;animation:pd 2s infinite; }
+    @keyframes pd { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(1.5)} }
+    .hero-title { font-family:'Barlow Condensed',sans-serif;font-size:clamp(52px,6.5vw,90px);font-weight:900;line-height:.92;letter-spacing:-.01em;text-transform:uppercase;color:#fff;margin-bottom:22px; }
+    .hero-title .acc { background:linear-gradient(135deg,var(--purple),var(--lavender));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
+    .hero-title .stroke { -webkit-text-stroke:2px var(--purple);color:transparent; }
+    .hero-sub { font-size:17px;color:var(--lavender);line-height:1.75;max-width:480px;margin-bottom:38px;font-weight:300; }
+    .hero-ctas { display:flex;gap:14px;flex-wrap:wrap;margin-bottom:52px; }
+    .hero-stats { display:flex;gap:36px; }
+    .hstat-n { font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:900;color:#fff;line-height:1; }
+    .hstat-l { font-size:11px;color:var(--lavender);letter-spacing:.08em;text-transform:uppercase;margin-top:3px; }
+
+    /* ══ FIGHT UI PREVIEW ════════════════════════════════════ */
+    .fu-wrap { position:relative;display:flex;justify-content:center;align-items:center; }
+    .fu-glow {
+      position:absolute;inset:-50px;
+      background:radial-gradient(ellipse,rgba(127,119,221,.28) 0%,transparent 65%);
+      border-radius:50%;animation:gp 4s ease-in-out infinite;
+    }
+    @keyframes gp { 0%,100%{opacity:.6;transform:scale(1)} 50%{opacity:1;transform:scale(1.08)} }
+    .fu-rings .ring {
+      position:absolute;top:50%;left:50%;
+      border:1px solid rgba(127,119,221,.12);
+      border-radius:50%;animation:re 4s ease-out infinite;
+    }
+    .ring:nth-child(1){width:500px;height:300px;margin-left:-250px;margin-top:-150px;}
+    .ring:nth-child(2){width:600px;height:360px;margin-left:-300px;margin-top:-180px;animation-delay:-1.3s;}
+    .ring:nth-child(3){width:700px;height:420px;margin-left:-350px;margin-top:-210px;animation-delay:-2.6s;}
+    @keyframes re { 0%{opacity:.5;transform:scale(.85)} 100%{opacity:0;transform:scale(1)} }
+
+    /* The kiosk screen bezel */
+    .fu-bezel {
+      position:relative;z-index:1;
+      width:560px;
+      background:linear-gradient(160deg,#1e1a45 0%,#0a0818 100%);
+      border-radius:18px;
+      border:1px solid rgba(127,119,221,.35);
+      box-shadow:0 0 0 1px rgba(127,119,221,.1),0 40px 90px rgba(0,0,0,.7),inset 0 1px 0 rgba(127,119,221,.15);
+      overflow:hidden;
+      padding:14px 14px 10px;
+    }
+    /* Bezel top notch-like strip */
+    .fu-bezel-top { display:flex;align-items:center;justify-content:space-between;padding:0 6px 10px; }
+    .fu-bezel-dot { width:8px;height:8px;border-radius:50%;background:rgba(127,119,221,.3); }
+    .fu-bezel-dots { display:flex;gap:6px; }
+    .fu-bezel-label { font-size:9px;color:rgba(175,169,236,.4);letter-spacing:.1em;text-transform:uppercase; }
+
+    /* Inner fight screen */
+    .fight-screen {
+      background:var(--dark);border-radius:10px;overflow:hidden;
+      border:1px solid rgba(127,119,221,.15);
+      font-family:'Barlow Condensed',sans-serif;
+    }
+    /* Top bar */
+    .fs-topbar {
+      background:var(--navy);border-bottom:1px solid rgba(127,119,221,.2);
+      padding:10px 16px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+    }
+    .fs-live { display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase; }
+    .fs-live-dot { width:7px;height:7px;border-radius:50%;background:#9F3FCC;animation:blink 1s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+    .fs-live-name { color:var(--lavender); }
+    /* Inline SVG logo for fight UI */
+    .fs-logo-svg { display:flex;justify-content:center; }
+    .fs-round { font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--lavender);text-align:right; }
+    /* Score */
+    .fs-score { text-align:center;padding:10px 12px 4px; }
+    .fs-score-lbl { font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--lavender);margin-bottom:2px; }
+    .fs-score-num { font-family:'Roboto Mono',monospace;font-size:68px;font-weight:700;color:#fff;line-height:1;transition:color .12s; }
+    .fs-score-num.flash-hit  { color:var(--hit); }
+    .fs-score-num.flash-miss { color:var(--miss); }
+    /* Timer */
+    .fs-timer { text-align:center;padding:4px 12px 8px; }
+    .fs-timer-num { font-family:'Roboto Mono',monospace;font-size:26px;font-weight:700;color:var(--lavender);line-height:1; }
+    .fs-timer-num.urgent { color:#9F3FCC;animation:blink .5s infinite; }
+    .fs-timer-lbl { font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--purple);margin:2px 0 6px; }
+    .fs-pbar { width:55%;height:3px;background:rgba(127,119,221,.15);border-radius:3px;overflow:hidden;margin:0 auto; }
+    .fs-pbar-fill { height:100%;background:var(--indigo);border-radius:3px;transition:width 1s linear; }
+    /* Metrics */
+    .fs-metrics { display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:0 12px 8px; }
+    .fs-mc { background:var(--navy);border-radius:8px;padding:8px 6px;border:1px solid rgba(127,119,221,.18);text-align:center; }
+    .fs-mc.active { background:var(--indigo);border-color:rgba(175,169,236,.3); }
+    .fs-mc-l { font-size:7.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--lavender);margin-bottom:2px; }
+    .fs-mc-v { font-family:'Roboto Mono',monospace;font-size:20px;font-weight:700;color:#fff;line-height:1; }
+    .fs-mc-v.good { color:var(--hit); }
+    .fs-mc-v.bad  { color:var(--miss); }
+    .fs-mc-u { font-size:7px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--purple);margin-top:2px; }
+    /* Action row */
+    .fs-action { display:flex;align-items:stretch;border-top:1px solid rgba(127,119,221,.18);min-height:52px; }
+    .fs-action-main { flex:1;display:flex;align-items:center;gap:10px;padding:8px 12px;transition:background .15s; }
+    .fs-action-main.cue-duck { background:rgba(159,63,204,.18); }
+    .fs-action-main.cue-punch { background:#2c2760; }
+    .fs-action-main.cue-sl,.fs-action-main.cue-sr { background:rgba(29,158,117,.13); }
+    .fs-action-main.st-hit  { background:rgba(29,158,117,.18); }
+    .fs-action-main.st-miss { background:rgba(152,60,29,.18); }
+    .fs-indicator { width:3px;height:32px;border-radius:3px;background:rgba(127,119,221,.3);flex-shrink:0;transition:background .15s; }
+    .fs-action-main.cue-duck  .fs-indicator { background:#9F3FCC; }
+    .fs-action-main.cue-punch .fs-indicator { background:var(--purple); }
+    .fs-action-main.cue-sl .fs-indicator,.fs-action-main.cue-sr .fs-indicator { background:var(--hit); }
+    .fs-action-main.st-hit  .fs-indicator { background:var(--hit); }
+    .fs-action-main.st-miss .fs-indicator { background:var(--miss); }
+    .fs-action-icon svg { width:26px;height:26px; }
+    .fs-action-word { font-size:18px;font-weight:700;text-transform:uppercase;color:#fff;line-height:1; }
+    .fs-action-sub  { font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--lavender); }
+    .fs-pts { font-family:'Roboto Mono',monospace;font-size:13px;font-weight:700;color:var(--hit);opacity:0;transition:opacity .12s;margin-left:auto; }
+    .fs-pts.show { opacity:1; }
+    .fs-pts.miss { color:var(--miss); }
+    .fs-exit { font-family:'Barlow Condensed',sans-serif;background:#fff;border:none;border-left:1px solid rgba(127,119,221,.2);color:var(--navy);font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:0 14px;cursor:default;flex-shrink:0; }
+
+    /* Float badges on the bezel */
+    .fu-badge {
+      position:absolute;z-index:2;
+      background:rgba(13,11,26,.95);border:1px solid var(--border);
+      border-radius:12px;padding:10px 14px;backdrop-filter:blur(12px);
+      animation:fbf 5s ease-in-out infinite;
+    }
+    .fu-b1 { top:20px;right:-60px;animation-delay:0s; }
+    .fu-b2 { bottom:80px;left:-64px;animation-delay:-2.5s; }
+    @keyframes fbf { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+    .fb-n { font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:var(--purple); }
+    .fb-l { font-size:10px;color:var(--lavender); }
+
+    /* ── TRUST BAR ──────────────────────────────────────────── */
+    #trust { border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:rgba(255,255,255,.015);padding:26px 48px;display:flex;align-items:center;justify-content:center;gap:52px;flex-wrap:wrap; }
+    .trust-lbl { font-size:11px;color:var(--lavender);letter-spacing:.12em;text-transform:uppercase;font-weight:500;opacity:.7; }
+    .trust-items { display:flex;align-items:center;gap:44px;flex-wrap:wrap; }
+    .ti { font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:rgba(255,255,255,.28);letter-spacing:.06em;text-transform:uppercase;transition:color .3s;cursor:default; }
+    .ti:hover { color:rgba(255,255,255,.55); }
+
+    /* ══════════════════════════════════════════════════════════
+       "IN SESSION" SHOWCASE SECTION
+    ══════════════════════════════════════════════════════════ */
+    #in-session { position:relative;overflow:hidden; }
+    .iss-wrap { max-width:1300px;margin:0 auto;padding:96px 48px; }
+    .iss-header { text-align:center;margin-bottom:60px; }
+    .iss-header .sub { margin:0 auto; }
+
+    /* 2-col layout: callout cards (left) + compact UI (right) */
+    .iss-body { display:grid;grid-template-columns:1fr 430px;gap:52px;align-items:start; }
+
+    /* ── Callout cards ────────────────────────────────────── */
+    .iss-cards { display:flex;flex-direction:column;gap:14px; }
+    .iss-card {
+      display:flex;gap:22px;align-items:flex-start;
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:16px;padding:28px 26px;
+      transition:all .35s var(--ease);cursor:default;
+    }
+    .iss-card:hover { border-color:var(--border-h);transform:translateX(5px);box-shadow:0 12px 40px rgba(0,0,0,.35); }
+    .iss-cn {
+      font-family:'Barlow Condensed',sans-serif;
+      font-size:56px;font-weight:900;line-height:1;
+      min-width:48px;flex-shrink:0;
+    }
+    .iss-card:nth-child(1) .iss-cn { background:linear-gradient(135deg,var(--indigo),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
+    .iss-card:nth-child(2) .iss-cn { color:var(--lavender); }
+    .iss-card:nth-child(3) .iss-cn { color:var(--hit); }
+    .iss-card:nth-child(4) .iss-cn { color:#9F3FCC; }
+    .iss-card-body { flex:1; }
+    .iss-card-tag {
+      display:inline-block;margin-bottom:8px;
+      background:rgba(127,119,221,.08);border:1px solid var(--border);
+      border-radius:100px;padding:3px 11px;
+      font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--purple);
+    }
+    .iss-card-tag.clr-lav { color:var(--lavender);border-color:rgba(175,169,236,.2); }
+    .iss-card-tag.clr-hit { color:var(--hit);border-color:rgba(93,202,165,.25);background:rgba(93,202,165,.06); }
+    .iss-card-tag.clr-dck { color:#9F3FCC;border-color:rgba(159,63,204,.25);background:rgba(159,63,204,.06); }
+    .iss-card h3 { font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.02em;margin-bottom:7px; }
+    .iss-card p { font-size:14px;color:var(--lavender);line-height:1.65; }
+
+    /* ── Compact fight UI (right, sticky) ─────────────────── */
+    .iss-ui-wrap { position:sticky;top:100px; }
+    .iss-ui-bezel {
+      background:linear-gradient(160deg,#1e1a45 0%,#0a0818 100%);
+      border-radius:16px;border:1px solid rgba(127,119,221,.35);
+      box-shadow:0 0 0 1px rgba(127,119,221,.1),0 30px 70px rgba(0,0,0,.7),inset 0 1px 0 rgba(127,119,221,.15);
+      overflow:hidden;padding:12px 12px 8px;
+    }
+    .iss-ui-bezel-top { display:flex;align-items:center;justify-content:space-between;padding:0 4px 8px; }
+    .iss-ui-dots { display:flex;gap:5px; }
+    .iss-ui-dot { width:7px;height:7px;border-radius:50%;background:rgba(127,119,221,.3); }
+    .iss-ui-lbl { font-size:8px;color:rgba(175,169,236,.35);letter-spacing:.1em;text-transform:uppercase; }
+
+    /* Compact fight screen (reuses fs- classes from hero preview) */
+    .iss-fight { font-family:'Barlow Condensed',sans-serif;background:var(--dark);border-radius:9px;overflow:hidden;border:1px solid rgba(127,119,221,.15); }
+    /* Override fs- sizes for the compact version */
+    .iss-fight .fs-score-num { font-size:56px; }
+    .iss-fight .fs-timer-num { font-size:24px; }
+    .iss-fight .fs-mc-v      { font-size:20px; }
+    .iss-fight .fs-action-word { font-size:17px; }
+    .iss-fight .fs-action-icon svg { width:24px;height:24px; }
+
+    /* ── Live indicator badge above compact UI ─────────────── */
+    .iss-live-badge {
+      display:inline-flex;align-items:center;gap:7px;
+      background:rgba(159,63,204,.12);border:1px solid rgba(159,63,204,.25);
+      border-radius:100px;padding:5px 14px;margin-bottom:10px;
+      font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#9F3FCC;
+    }
+    .iss-live-badge-dot { width:6px;height:6px;border-radius:50%;background:#9F3FCC;animation:blink 1s infinite; }
+
+    /* bf- aliases pointing at the same fight-screen elements */
+    .bf-score-num.flash-hit  { color:var(--hit); }
+    .bf-score-num.flash-miss { color:var(--miss); }
+
+    /* ══ FEATURES BENTO ════════════════════════════════════ */
+    .bento { display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:56px; }
+    .bc {
+      background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+      padding:30px;transition:all .35s var(--ease);cursor:default;position:relative;overflow:hidden;
+    }
+    .bc::before { content:'';position:absolute;inset:0;opacity:0;background:radial-gradient(ellipse at top left,rgba(127,119,221,.08) 0%,transparent 60%);transition:opacity .35s; }
+    .bc:hover { border-color:var(--border-h);transform:translateY(-4px);box-shadow:0 20px 50px rgba(0,0,0,.4); }
+    .bc:hover::before { opacity:1; }
+    .bc.wide { grid-column:span 2; }
+    .bc.tall { grid-row:span 2; }
+    .bi { width:50px;height:50px;background:rgba(127,119,221,.1);border:1px solid var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:18px; }
+    .bi svg { width:22px;height:22px;stroke:var(--purple);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round; }
+    .bc h3 { font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:#fff;margin-bottom:8px;text-transform:uppercase;letter-spacing:.02em; }
+    .bc p { font-size:13px;color:var(--lavender);line-height:1.65; }
+    .btag { display:inline-block;margin-top:16px;background:rgba(127,119,221,.1);border:1px solid var(--border);border-radius:100px;padding:3px 11px;font-size:10px;color:var(--purple);font-weight:700;letter-spacing:.06em;text-transform:uppercase; }
+    /* Mini analytics widget in the tall feature card */
+    .mini-widget { margin-top:20px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:14px; }
+    .mw-row { display:flex;align-items:center;gap:8px;margin-bottom:7px; }
+    .mw-row:last-child { margin:0; }
+    .mw-lbl { font-size:9px;color:var(--lavender);width:50px;text-transform:uppercase;letter-spacing:.06em; }
+    .mw-bar-bg { flex:1;background:rgba(255,255,255,.07);border-radius:3px;height:4px; }
+    .mw-bar-fill { height:100%;border-radius:3px;background:linear-gradient(90deg,var(--indigo),var(--purple)); }
+    .mw-val { font-size:9px;color:#fff;font-weight:700;width:26px;text-align:right; }
+
+    /* ══ HOW IT WORKS ══════════════════════════════════════ */
+    .how-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:56px; }
+    .step {
+      background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+      padding:36px 28px;position:relative;transition:all .35s var(--ease);
+    }
+    .step::after { content:'';position:absolute;top:50%;right:-11px;transform:translateY(-50%);border-top:9px solid transparent;border-bottom:9px solid transparent;border-left:10px solid var(--border); }
+    .step:last-child::after { display:none; }
+    .step:hover { border-color:var(--border-h);box-shadow:0 20px 50px rgba(0,0,0,.3); }
+    .step-n { font-family:'Barlow Condensed',sans-serif;font-size:64px;font-weight:900;line-height:1;color:rgba(127,119,221,.14);margin-bottom:16px; }
+    .step-ico { width:52px;height:52px;background:rgba(127,119,221,.1);border:1px solid var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:16px; }
+    .step-ico svg { width:24px;height:24px;stroke:var(--purple);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round; }
+    .step h3 { font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:#fff;margin-bottom:8px;text-transform:uppercase; }
+    .step p { font-size:13px;color:var(--lavender);line-height:1.65; }
+
+    /* ══ USE CASES ═════════════════════════════════════════ */
+    .uc-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:56px; }
+    .uc { background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:36px;display:flex;gap:24px;align-items:flex-start;transition:all .35s var(--ease); }
+    .uc:hover { border-color:var(--border-h);transform:translateY(-4px);box-shadow:0 20px 50px rgba(0,0,0,.4); }
+    .uc-ico { width:56px;height:56px;min-width:56px;background:rgba(127,119,221,.1);border:1px solid var(--border);border-radius:14px;display:flex;align-items:center;justify-content:center; }
+    .uc-ico svg { width:26px;height:26px;stroke:var(--purple);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round; }
+    .uc h3 { font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:#fff;margin-bottom:6px;text-transform:uppercase; }
+    .uc p { font-size:13px;color:var(--lavender);line-height:1.65; }
+
+    /* ══ PERFORMANCE / SPECS ═══════════════════════════════ */
+    #perf {
+      background:linear-gradient(135deg,rgba(38,33,92,.2) 0%,transparent 60%);
+      border:1px solid var(--border);border-radius:28px;padding:72px 56px;
+      position:relative;overflow:hidden;margin:0 48px;
+    }
+    #perf::before { content:'';position:absolute;top:-60px;right:-60px;width:260px;height:260px;background:radial-gradient(circle,rgba(127,119,221,.1) 0%,transparent 70%);border-radius:50%; }
+    .perf-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-top:48px; }
+    .pg { text-align:center; }
+    .pg-n { font-family:'Barlow Condensed',sans-serif;font-size:46px;font-weight:900;background:linear-gradient(135deg,var(--purple),var(--lavender));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
+    .pg-l { font-size:12px;color:var(--lavender);margin-top:4px;text-transform:uppercase;letter-spacing:.08em; }
+    .pg-d { font-size:11px;color:rgba(175,169,236,.5);margin-top:3px; }
+    .perf-feats { display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:36px; }
+    .pf { display:flex;gap:11px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px; }
+    .pf svg { width:16px;height:16px;stroke:var(--purple);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0; }
+    .pf span { font-size:13px;color:var(--lavender); }
+
+    /* ══ WAITLIST ═══════════════════════════════════════════ */
+    #waitlist {
+      text-align:center;margin:0 48px;
+      background:radial-gradient(ellipse 70% 60% at 50% 50%,rgba(60,52,137,.22) 0%,transparent 70%);
+      border:1px solid var(--border);border-radius:28px;padding:88px 56px;
+      position:relative;overflow:hidden;
+    }
+    .wl-count { display:inline-flex;align-items:center;gap:10px;background:rgba(127,119,221,.1);border:1px solid var(--border);border-radius:100px;padding:7px 18px;margin-bottom:28px;font-size:13px;color:var(--lavender); }
+    .wl-n { font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:var(--purple); }
+    .wl-title { font-family:'Barlow Condensed',sans-serif;font-size:clamp(38px,5vw,72px);font-weight:900;text-transform:uppercase;color:#fff;line-height:.95;margin-bottom:18px; }
+    .wl-sub { font-size:17px;color:var(--lavender);max-width:480px;margin:0 auto 36px;line-height:1.75;font-weight:300; }
+    /* Netlify form */
+    .wl-form { display:flex;gap:12px;max-width:500px;margin:0 auto 28px; }
+    .wl-input { flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:17px 20px;color:#fff;font-size:15px;outline:none;transition:border-color .25s;font-family:'Inter',sans-serif; }
+    .wl-input::placeholder { color:rgba(175,169,236,.45); }
+    .wl-input:focus { border-color:var(--purple); }
+    .wl-type { display:flex;gap:12px;max-width:500px;margin:-12px auto 24px; }
+    .wl-radio { display:flex;align-items:center;gap:8px;font-size:13px;color:var(--lavender);cursor:pointer; }
+    .wl-radio input { accent-color:var(--purple); }
+    .wl-benefits { display:flex;gap:28px;justify-content:center;flex-wrap:wrap; }
+    .wb { display:flex;align-items:center;gap:8px;font-size:12px;color:var(--lavender); }
+    .wb svg { width:15px;height:15px;stroke:var(--hit);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round; }
+    .wl-success { display:none;padding:16px 24px;background:rgba(93,202,165,.1);border:1px solid rgba(93,202,165,.3);border-radius:12px;color:var(--hit);font-size:15px;font-weight:500;max-width:420px;margin:0 auto; }
+    .wl-error { display:none;padding:14px 20px;background:rgba(216,90,48,.1);border:1px solid rgba(216,90,48,.3);border-radius:10px;color:var(--miss);font-size:14px;max-width:420px;margin:0 auto 12px; }
+
+    /* ══ FAQ ════════════════════════════════════════════════ */
+    .faq-list { margin-top:44px;display:flex;flex-direction:column;gap:10px;max-width:760px;margin-left:auto;margin-right:auto; }
+    .fq { background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .25s; }
+    .fq.open { border-color:var(--border-h); }
+    .fq-q { width:100%;display:flex;justify-content:space-between;align-items:center;padding:20px 22px;background:none;border:none;color:#fff;font-size:15px;font-weight:500;cursor:pointer;text-align:left;gap:18px;transition:color .2s; }
+    .fq-q:hover { color:var(--lavender); }
+    .fq-chev { width:18px;height:18px;min-width:18px;stroke:var(--purple);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .3s var(--ease); }
+    .fq.open .fq-chev { transform:rotate(180deg); }
+    .fq-a { max-height:0;overflow:hidden;transition:max-height .4s var(--ease);padding:0 22px;color:var(--lavender);font-size:14px;line-height:1.7; }
+    .fq.open .fq-a { max-height:220px;padding-bottom:20px; }
+
+    /* ══ FOOTER ═════════════════════════════════════════════ */
+    footer { border-top:1px solid var(--border);background:rgba(255,255,255,.01);padding:56px 48px 36px; }
+    .foot-inner { max-width:1300px;margin:0 auto; }
+    .foot-top { display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:52px;margin-bottom:52px; }
+    .foot-brand p { font-size:13px;color:var(--lavender);line-height:1.7;margin-top:14px;max-width:280px; }
+    .foot-col h4 { font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:#fff;text-transform:uppercase;letter-spacing:.1em;margin-bottom:18px; }
+    .foot-col ul { list-style:none;display:flex;flex-direction:column;gap:10px; }
+    .foot-col a { font-size:13px;color:var(--lavender);text-decoration:none;transition:color .2s; }
+    .foot-col a:hover { color:#fff; }
+    .foot-bottom { display:flex;justify-content:space-between;align-items:center;padding-top:28px;border-top:1px solid var(--border);flex-wrap:wrap;gap:14px; }
+    .foot-copy { font-size:12px;color:rgba(175,169,236,.45); }
+    .foot-socials { display:flex;gap:10px; }
+    .soc { width:38px;height:38px;background:var(--surface);border:1px solid var(--border);border-radius:9px;display:flex;align-items:center;justify-content:center;text-decoration:none;transition:all .25s; }
+    .soc:hover { border-color:var(--purple);color:var(--purple); }
+    .soc svg { width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;color:var(--lavender); }
+
+    /* ══ RESPONSIVE ═════════════════════════════════════════ */
+    @media(max-width:1100px){
+      .hero-inner{grid-template-columns:1fr;text-align:center}
+      .hero-sub,.hero-ctas,.hero-stats{margin-left:auto;margin-right:auto}
+      .hero-ctas,.hero-stats{justify-content:center}
+      .fu-badge{display:none}
+      .fu-bezel{width:100%;max-width:520px}
+      .bento{grid-template-columns:repeat(2,1fr)}
+      .bc.wide{grid-column:span 2}
+      .bc.tall{grid-row:auto}
+      .perf-grid{grid-template-columns:repeat(2,1fr)}
+      .foot-top{grid-template-columns:1fr 1fr;gap:36px}
+      .iss-body{grid-template-columns:1fr}
+      .iss-ui-wrap{position:static;max-width:440px;margin:0 auto}
+    }
+    @media(max-width:768px){
+      nav{padding:14px 20px}
+      nav.scrolled{padding:10px 20px}
+      .nav-links,.nav-cta{display:none}
+      .hamburger{display:block}
+      .section,#hero{padding:70px 20px}
+      #trust{padding:22px 20px;gap:18px;flex-direction:column}
+      .trust-items{gap:20px;justify-content:center}
+      .iss-wrap{padding:70px 20px}
+      .bento{grid-template-columns:1fr}
+      .bc.wide{grid-column:auto}
+      .how-grid,.uc-grid{grid-template-columns:1fr}
+      .step::after{display:none}
+      #perf{margin:0 20px;padding:44px 24px}
+      .perf-grid{grid-template-columns:1fr 1fr;gap:20px}
+      .perf-feats{grid-template-columns:1fr}
+      #waitlist{margin:0 20px;padding:56px 24px}
+      .wl-form{flex-direction:column}
+      .wl-type{justify-content:center}
+      .wl-benefits{flex-direction:column;align-items:center;gap:12px}
+      .foot-top{grid-template-columns:1fr;gap:28px}
+      footer{padding:40px 20px 28px}
+      .foot-bottom{flex-direction:column;text-align:center}
+      .iss-cn{font-size:42px;min-width:38px}
+    }
+    @media(max-width:480px){
+      .fu-bezel{padding:10px 10px 8px}
+    }
+  </style>
+</head>
+<body>
+
+<!-- Netlify Forms detection - hidden form for form submission tracking -->
+<form name="waitlist" netlify netlify-honeypot="bot-field" hidden>
+  <input type="text" name="bot-field" />
+  <input type="email" name="email" />
+  <input type="text" name="interest" />
+</form>
+<form name="inquiry" netlify netlify-honeypot="bot-field" hidden>
+  <input type="text" name="bot-field" />
+  <input type="text" name="name" />
+  <input type="email" name="email" />
+  <input type="text" name="company" />
+  <textarea name="message"></textarea>
+</form>
+
+<div id="progress-bar"></div>
+
+<!-- ── NAV ──────────────────────────────────────────────────── -->
+<nav id="nav">
+  <a href="#" class="nav-logo">
+    <img src="logo.png" alt="FitHit" onerror="this.style.display='none'" />
+    <span class="nav-logo-txt">FITHIT</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#in-session">Experience</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#perf">Performance</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ul>
+  <button class="nav-cta" onclick="scroll2('#waitlist')">Join Waitlist</button>
+  <button class="hamburger" aria-label="Menu">&#9776;</button>
+</nav>
+
+<!-- ── HERO ──────────────────────────────────────────────────── -->
+<div id="hero">
+  <div class="orb o1"></div>
+  <div class="orb o2"></div>
+  <div class="orb o3"></div>
+
+  <div class="hero-inner">
+    <!-- Copy -->
+    <div>
+      <div class="hero-badge rv">
+        <span class="badge-dot"></span> Now Taking Waitlist Sign-Ups
+      </div>
+      <h1 class="hero-title rv d1">
+        PUNCH<br>
+        <span class="acc">SMARTER.</span><br>
+        <span class="stroke">TRAIN</span><br>
+        HARDER.
+      </h1>
+      <p class="hero-sub rv d2">FitHit is the smart boxing kiosk that tracks every strike, coaches every move, and syncs your performance to the cloud. Real boxing. Real data. Real results.</p>
+      <div class="hero-ctas rv d3">
+        <button class="btn btn-p" onclick="scroll2('#waitlist')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Join the Waitlist
+        </button>
+        <a href="#in-session" class="btn btn-s">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+          See It Live
+        </a>
+      </div>
+      <div class="hero-stats rv d4">
+        <div><div class="hstat-n" data-count="500">0</div><div class="hstat-l">Waitlist Members</div></div>
+        <div><div class="hstat-n">4</div><div class="hstat-l">Punch Types Tracked</div></div>
+        <div><div class="hstat-n">&lt;100<span style="font-size:18px">ms</span></div><div class="hstat-l">Response Time</div></div>
+      </div>
+    </div>
+
+    <!-- Fight UI Preview -->
+    <div class="fu-wrap rv d2">
+      <div class="fu-rings">
+        <div class="ring"></div><div class="ring"></div><div class="ring"></div>
+      </div>
+      <div class="fu-glow"></div>
+
+      <div class="fu-bezel">
+        <div class="fu-bezel-top">
+          <div class="fu-bezel-dots">
+            <div class="fu-bezel-dot"></div>
+            <div class="fu-bezel-dot" style="opacity:.5"></div>
+            <div class="fu-bezel-dot" style="opacity:.3"></div>
+          </div>
+          <div class="fu-bezel-label">FitHit Kiosk — Live Session</div>
+        </div>
+        <div class="fight-screen" id="preview">
+          <div class="fs-topbar">
+            <div class="fs-live"><div class="fs-live-dot"></div>LIVE&nbsp;<span class="fs-live-name">CHAMPION</span></div>
+            <!-- FitHit inline SVG logo -->
+            <div class="fs-logo-svg">
+              <svg viewBox="0 0 160 54" style="height:28px;width:auto" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g transform="translate(60,1)"><ellipse cx="18" cy="6" rx="4" ry="4.5" fill="#4a3a9a"/><path d="M18 11 Q10 18 8 28 Q14 22 22 26 Q26 16 22 11 Z" fill="#9F3FCC"/><path d="M8 28 Q4 36 6 42" stroke="#9F3FCC" stroke-width="2" stroke-linecap="round"/><path d="M22 26 Q28 34 26 42" stroke="#9F3FCC" stroke-width="2" stroke-linecap="round"/><path d="M6 20 Q12 14 18 11 Q22 14 22 20" stroke="#4a3a9a" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M8 28 Q4 22 6 20" stroke="#9F3FCC" stroke-width="2" stroke-linecap="round"/></g>
+                <text x="0" y="42" font-family="'Barlow Condensed',sans-serif" font-size="34" font-weight="700" fill="#4a3a9a">F</text><text x="22" y="42" font-family="'Barlow Condensed',sans-serif" font-size="34" font-weight="700" fill="#4a3a9a">it</text><text x="55" y="42" font-family="'Barlow Condensed',sans-serif" font-size="34" font-weight="700" fill="#9F3FCC">H</text><text x="76" y="42" font-family="'Barlow Condensed',sans-serif" font-size="34" font-weight="700" fill="#4a3a9a">it</text>
+              </svg>
+            </div>
+            <div class="fs-round">Round 2 of 4</div>
+          </div>
+          <div class="fs-score"><div class="fs-score-lbl">Score</div><div class="fs-score-num" id="p-score">842</div></div>
+          <div class="fs-timer">
+            <div class="fs-timer-num" id="p-timer">01:23</div>
+            <div class="fs-timer-lbl">Remaining</div>
+            <div class="fs-pbar"><div class="fs-pbar-fill" id="p-pbar" style="width:69%"></div></div>
+          </div>
+          <div class="fs-metrics">
+            <div class="fs-mc active"><div class="fs-mc-l">Power</div><div class="fs-mc-v" id="p-power">82</div><div class="fs-mc-u">% avg</div></div>
+            <div class="fs-mc"><div class="fs-mc-l">Reaction</div><div class="fs-mc-v" id="p-react">0.38</div><div class="fs-mc-u">seconds</div></div>
+            <div class="fs-mc"><div class="fs-mc-l">Hits</div><div class="fs-mc-v good" id="p-hits">24</div><div class="fs-mc-u">this round</div></div>
+            <div class="fs-mc"><div class="fs-mc-l">Misses</div><div class="fs-mc-v bad" id="p-misses">3</div><div class="fs-mc-u">this round</div></div>
+          </div>
+          <div class="fs-action">
+            <div class="fs-action-main cue-duck" id="p-action">
+              <div class="fs-indicator"></div>
+              <div class="fs-action-icon" id="p-icon">
+                <svg viewBox="0 0 40 40" fill="none"><path d="M8 15 L20 28 L32 15" stroke="#9F3FCC" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 10 L27 10" stroke="#9F3FCC" stroke-width="2" stroke-linecap="round" opacity=".45"/></svg>
+              </div>
+              <div>
+                <div class="fs-action-word" id="p-word" style="color:#CF8FFF">DUCK</div>
+                <div class="fs-action-sub">Drop and evade</div>
+              </div>
+              <div class="fs-pts" id="p-pts"></div>
+            </div>
+            <div class="fs-exit">EXIT<br>SESSION</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fu-badge fu-b1"><div class="fb-n" id="hero-hit-count">2,840</div><div class="fb-l">Punches today</div></div>
+      <div class="fu-badge fu-b2"><div class="fb-n" style="color:var(--hit)">+127 pts</div><div class="fb-l">Last hit</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TRUST BAR ──────────────────────────────────────────────── -->
+<div id="trust">
+  <span class="trust-lbl">Coming to</span>
+  <div class="trust-items">
+    <span class="ti">Boxing Clubs</span>
+    <span class="ti">Commercial Gyms</span>
+    <span class="ti">Training Camps</span>
+    <span class="ti">Sport Centres</span>
+    <span class="ti">Hotels &amp; Resorts</span>
+  </div>
+</div>
+
+<!-- ── IN SESSION SHOWCASE ────────────────────────────────────── -->
+<div id="in-session">
+  <div class="iss-wrap">
+    <div class="iss-header">
+      <div class="tag rv" style="justify-content:center">Live Experience</div>
+      <h2 class="ttl rv d1" style="text-align:center">THIS IS WHAT<br><span class="acc">YOUR SESSION</span> LOOKS LIKE</h2>
+      <p class="sub rv d2" style="text-align:center;margin:0 auto">Every number live. Every cue instant. Every punch on record — exactly as it runs on the gym floor.</p>
+    </div>
+
+    <div class="iss-body">
+
+      <!-- Left: 4 large callout cards -->
+      <div class="iss-cards">
+
+        <div class="iss-card rv d1">
+          <div class="iss-cn">01</div>
+          <div class="iss-card-body">
+            <span class="iss-card-tag">Live Score</span>
+            <h3>Every Punch Counts</h3>
+            <p>The score updates in real-time with every hit. Land a combo and a multiplier kicks in — chain punches together to rack up bonus points and pull ahead faster.</p>
+          </div>
+        </div>
+
+        <div class="iss-card rv d2">
+          <div class="iss-cn">02</div>
+          <div class="iss-card-body">
+            <span class="iss-card-tag clr-lav">Round Timer</span>
+            <h3>Rounds Built Around You</h3>
+            <p>Sessions are broken into configurable rounds with a live countdown. When time drops below 15 seconds, the display goes urgent — pushing you to give everything you've got before the bell.</p>
+          </div>
+        </div>
+
+        <div class="iss-card rv d3">
+          <div class="iss-cn">03</div>
+          <div class="iss-card-body">
+            <span class="iss-card-tag clr-hit">Performance Metrics</span>
+            <h3>Four Stats. Full Picture.</h3>
+            <p>Power percentage, reaction time, total hits, and misses — all tracked continuously through the session. See exactly what's working and where you need to improve, right there on screen.</p>
+          </div>
+        </div>
+
+        <div class="iss-card rv d4">
+          <div class="iss-cn">04</div>
+          <div class="iss-card-body">
+            <span class="iss-card-tag clr-dck">Action Coaching</span>
+            <h3>More Than Just Punching</h3>
+            <p>Live cues tell you when to PUNCH, DUCK, or SWERVE — turning every session into a full-body boxing workout. The indicator flashes green on a clean hit, red on a miss. React fast, train smart.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right: compact fight UI preview (sticky) -->
+      <div class="iss-ui-wrap rv d2">
+        <div style="text-align:center;margin-bottom:10px">
+          <span class="iss-live-badge"><span class="iss-live-badge-dot"></span>Live Preview</span>
+        </div>
+        <div class="iss-ui-bezel">
+          <div class="iss-ui-bezel-top">
+            <div class="iss-ui-dots">
+              <div class="iss-ui-dot"></div>
+              <div class="iss-ui-dot" style="opacity:.5"></div>
+              <div class="iss-ui-dot" style="opacity:.3"></div>
+            </div>
+            <div class="iss-ui-lbl">FitHit Kiosk · In Session</div>
+          </div>
+          <!-- Reuse fight-screen CSS, big- IDs for live JS updates -->
+          <div class="iss-fight fight-screen" id="iss-preview">
+            <div class="fs-topbar">
+              <div class="fs-live"><div class="fs-live-dot"></div>LIVE&nbsp;<span class="fs-live-name">CHAMPION</span></div>
+              <svg viewBox="0 0 160 54" style="height:22px;width:auto" fill="none">
+                <g transform="translate(60,1)"><ellipse cx="18" cy="6" rx="4" ry="4.5" fill="#4a3a9a"/><path d="M18 11 Q10 18 8 28 Q14 22 22 26 Q26 16 22 11 Z" fill="#9F3FCC"/><path d="M8 28 Q4 36 6 42" stroke="#9F3FCC" stroke-width="2" stroke-linecap="round"/><path d="M22 26 Q28 34 26 42" stroke="#9F3FCC" stroke-width="2" stroke-linecap="round"/><path d="M6 20 Q12 14 18 11 Q22 14 22 20" stroke="#4a3a9a" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M8 28 Q4 22 6 20" stroke="#9F3FCC" stroke-width="2" stroke-linecap="round"/></g>
+                <text x="0" y="42" font-family="'Barlow Condensed',sans-serif" font-size="34" font-weight="700" fill="#4a3a9a">F</text><text x="22" y="42" font-family="'Barlow Condensed',sans-serif" font-size="34" font-weight="700" fill="#4a3a9a">it</text><text x="55" y="42" font-family="'Barlow Condensed',sans-serif" font-size="34" font-weight="700" fill="#9F3FCC">H</text><text x="76" y="42" font-family="'Barlow Condensed',sans-serif" font-size="34" font-weight="700" fill="#4a3a9a">it</text>
+              </svg>
+              <div class="fs-round">Round 2 of 4</div>
+            </div>
+            <div class="fs-score"><div class="fs-score-lbl">Score</div><div class="fs-score-num" id="big-score">842</div></div>
+            <div class="fs-timer">
+              <div class="fs-timer-num" id="big-timer">01:19</div>
+              <div class="fs-timer-lbl">Remaining</div>
+              <div class="fs-pbar"><div class="fs-pbar-fill" id="big-pbar" style="width:69%"></div></div>
+            </div>
+            <div class="fs-metrics">
+              <div class="fs-mc active"><div class="fs-mc-l">Power</div><div class="fs-mc-v" id="big-power">82</div><div class="fs-mc-u">% avg</div></div>
+              <div class="fs-mc"><div class="fs-mc-l">Reaction</div><div class="fs-mc-v" id="big-react">0.38</div><div class="fs-mc-u">secs</div></div>
+              <div class="fs-mc"><div class="fs-mc-l">Hits</div><div class="fs-mc-v good" id="big-hits">24</div><div class="fs-mc-u">round</div></div>
+              <div class="fs-mc"><div class="fs-mc-l">Misses</div><div class="fs-mc-v bad" id="big-misses">3</div><div class="fs-mc-u">round</div></div>
+            </div>
+            <div class="fs-action">
+              <div class="fs-action-main cue-duck" id="big-action">
+                <div class="fs-indicator"></div>
+                <div class="fs-action-icon" id="big-icon">
+                  <svg viewBox="0 0 40 40" fill="none"><path d="M8 15 L20 28 L32 15" stroke="#9F3FCC" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 10 L27 10" stroke="#9F3FCC" stroke-width="2" stroke-linecap="round" opacity=".45"/></svg>
+                </div>
+                <div>
+                  <div class="fs-action-word" id="big-word" style="color:#CF8FFF">DUCK</div>
+                  <div class="fs-action-sub" id="big-sub">Drop and evade</div>
+                </div>
+                <div class="fs-pts" id="big-pts"></div>
+              </div>
+              <div class="fs-exit">EXIT<br>SESSION</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /iss-body -->
+  </div><!-- /iss-wrap -->
+</div>
+
+<!-- ── FEATURES BENTO ─────────────────────────────────────────── -->
+<section id="features" class="section">
+  <div style="text-align:center;margin-bottom:56px">
+    <div class="tag rv" style="justify-content:center">Features</div>
+    <h2 class="ttl rv d1" style="text-align:center">EVERYTHING A<br><span class="acc">SERIOUS FIGHTER</span> NEEDS</h2>
+    <p class="sub rv d2" style="text-align:center;margin:0 auto">Built for performance environments. No shortcuts, no gimmicks — just elite boxing technology that delivers results every session.</p>
+  </div>
+  <div class="bento">
+    <div class="bc tall rv d1">
+      <div class="bi"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+      <h3>Real-Time Punch Detection</h3>
+      <p>Every strike measured for speed, force, and type — sub-100ms. Jabs, crosses, hooks, and uppercuts all tracked independently.</p>
+      <span class="btag">Core Technology</span>
+      <div class="mini-widget">
+        <div class="mw-row"><span class="mw-lbl">Jab</span><div class="mw-bar-bg"><div class="mw-bar-fill" style="width:72%"></div></div><span class="mw-val">72%</span></div>
+        <div class="mw-row"><span class="mw-lbl">Cross</span><div class="mw-bar-bg"><div class="mw-bar-fill" style="width:88%"></div></div><span class="mw-val">88%</span></div>
+        <div class="mw-row"><span class="mw-lbl">Hook</span><div class="mw-bar-bg"><div class="mw-bar-fill" style="width:61%"></div></div><span class="mw-val">61%</span></div>
+        <div class="mw-row"><span class="mw-lbl">Uppercut</span><div class="mw-bar-bg"><div class="mw-bar-fill" style="width:79%"></div></div><span class="mw-val">79%</span></div>
+      </div>
+    </div>
+    <div class="bc rv d2">
+      <div class="bi"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <h3>Action Coaching System</h3>
+      <p>Live visual cues tell you when to punch, duck, or swerve — creating a full-body workout that goes beyond just hitting the pad.</p>
+      <span class="btag">Full Body</span>
+    </div>
+    <div class="bc rv d3">
+      <div class="bi"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+      <h3>Instant QR Login</h3>
+      <p>Scan once on your phone — your profile loads in seconds. Works perfectly with boxing gloves on.</p>
+      <span class="btag">Zero Friction</span>
+    </div>
+    <div class="bc rv d2">
+      <div class="bi"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <h3>1v1 Battle Mode</h3>
+      <p>Head-to-head fight sessions. Two fighters, one kiosk. The machine tracks both simultaneously and declares a winner.</p>
+      <span class="btag">Multiplayer</span>
+    </div>
+    <div class="bc rv d3">
+      <div class="bi"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+      <h3>Progress Tracking</h3>
+      <p>Every session saved and synced. Watch your power, reaction time, and accuracy improve week by week.</p>
+      <span class="btag">Long-Term Growth</span>
+    </div>
+    <div class="bc wide rv d1">
+      <div class="bi"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
+      <h3>Configurable Workout Modes</h3>
+      <p>Set your height, skill level, workout style, round count, and intensity before each session. From beginner cardio to elite conditioning — FitHit meets you where you are and challenges you to go further.</p>
+      <span class="btag">Personalised</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ────────────────────────────────────────────── -->
+<section id="how" class="section" style="background:radial-gradient(ellipse 60% 40% at 50% 50%,rgba(38,33,92,.12) 0%,transparent 70%)">
+  <div class="tag rv">Simple Process</div>
+  <h2 class="ttl rv d1">HOW IT<br><span class="acc">WORKS</span></h2>
+  <p class="sub rv d2">From walk-up to first punch in under 60 seconds. Designed for the gym floor — fast, intuitive, glove-friendly.</p>
+  <div class="how-grid">
+    <div class="step rv d1">
+      <div class="step-n">01</div>
+      <div class="step-ico"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+      <h3>Approach the Kiosk</h3>
+      <p>Walk up and tap the screen. Jump straight in with Quick Start — no account needed — or scan your QR code to load your fighter profile instantly.</p>
+    </div>
+    <div class="step rv d2">
+      <div class="step-n">02</div>
+      <div class="step-ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h.01M12 8h.01M16 8h.01M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg></div>
+      <h3>Configure Your Session</h3>
+      <p>Set rounds, intensity level, and training mode. The kiosk calibrates to your height and preferred workout style in seconds.</p>
+    </div>
+    <div class="step rv d3">
+      <div class="step-n">03</div>
+      <div class="step-ico"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+      <h3>Train &amp; Conquer</h3>
+      <p>Step up and throw. Every punch tracked, every cue responded to, every stat synced to your cloud profile at the end of the session.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── USE CASES ──────────────────────────────────────────────── -->
+<section id="usecases" class="section">
+  <div style="text-align:center;margin-bottom:56px">
+    <div class="tag rv" style="justify-content:center">Who It's For</div>
+    <h2 class="ttl rv d1" style="text-align:center">BUILT FOR<br><span class="acc">EVERY ARENA</span></h2>
+    <p class="sub rv d2" style="text-align:center;margin:0 auto">FitHit slots into any high-performance environment. Wherever serious training happens, FitHit belongs.</p>
+  </div>
+  <div class="uc-grid">
+    <div class="uc rv d1">
+      <div class="uc-ico"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+      <div><h3>Boxing Clubs</h3><p>Give members the most advanced training tool in the sport. Run competitions, track improvement, and keep fighters engaged between sparring sessions.</p></div>
+    </div>
+    <div class="uc rv d2">
+      <div class="uc-ico"><svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
+      <div><h3>Commercial Gyms</h3><p>Stand out from the competition. FitHit draws members in and keeps them training longer — a premium addition to any gym floor.</p></div>
+    </div>
+    <div class="uc rv d3">
+      <div class="uc-ico"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+      <div><h3>Training Camps</h3><p>Professional fighters need precision data. FitHit gives coaches and athletes detailed strike metrics to shape strategy and peak conditioning.</p></div>
+    </div>
+    <div class="uc rv d4">
+      <div class="uc-ico"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+      <div><h3>Hotels &amp; Resorts</h3><p>Elevate your wellness offering. A FitHit kiosk turns a standard gym amenity into an unforgettable experience guests will return for.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PERFORMANCE / SPECS ─────────────────────────────────────── -->
+<div id="perf" class="rv">
+  <div class="tag">Performance</div>
+  <h2 class="ttl rv d1">BUILT TO<br><span class="acc">PERFORM</span></h2>
+  <p class="sub rv d2">Engineered for high-traffic commercial environments. Reliable, responsive, and built to handle serious training day after day.</p>
+  <div class="perf-grid">
+    <div class="pg rv d1"><div class="pg-n">4</div><div class="pg-l">Punch Types</div><div class="pg-d">Jab, Cross, Hook, Uppercut</div></div>
+    <div class="pg rv d2"><div class="pg-n">&lt;100<span style="font-size:24px">ms</span></div><div class="pg-l">Response Time</div><div class="pg-d">Near-instant punch detection</div></div>
+    <div class="pg rv d3"><div class="pg-n">12</div><div class="pg-l">Max Rounds</div><div class="pg-d">Fully configurable sessions</div></div>
+    <div class="pg rv d4"><div class="pg-n">∞</div><div class="pg-l">Fighter Profiles</div><div class="pg-d">Unlimited cloud storage</div></div>
+  </div>
+  <div class="perf-feats">
+    <div class="pf rv d1"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span>Sub-100ms punch detection — no lag, no missed strikes</span></div>
+    <div class="pf rv d2"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>Encrypted cloud profiles — your data, always secure</span></div>
+    <div class="pf rv d3"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg><span>Glove-optimised large touch targets — 64px minimum</span></div>
+    <div class="pf rv d4"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Real-time session analytics — score, power, reaction, combos</span></div>
+    <div class="pf rv d5"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Multi-player 1v1 mode — simultaneous tracking, one kiosk</span></div>
+    <div class="pf rv d6"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Session history &amp; progress graphs — long-term improvement tracking</span></div>
+  </div>
+</div>
+
+<!-- ── WAITLIST ────────────────────────────────────────────────── -->
+<div id="waitlist" class="rv">
+  <div class="wl-count rv"><span class="wl-n" data-count="500">0</span>&nbsp;fighters already in line</div>
+  <h2 class="wl-title rv d1">BE FIRST<br><span style="background:linear-gradient(135deg,var(--purple),var(--lavender));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">IN LINE.</span></h2>
+  <p class="wl-sub rv d2">FitHit is coming. Join the waitlist for early access, exclusive launch pricing, and priority placement for your gym or club.</p>
+
+  <div class="wl-error rv" id="wl-error">Something went wrong. Please try again.</div>
+
+  <!-- Netlify Forms powered form -->
+  <form class="wl-form rv d3" name="waitlist" method="POST" data-netlify="true" netlify-honeypot="bot-field" id="wl-form" onsubmit="handleWaitlist(event)">
+    <input type="hidden" name="form-name" value="waitlist" />
+    <input type="hidden" name="bot-field" />
+    <input type="email" name="email" class="wl-input" placeholder="your@email.com" required aria-label="Email address" />
+    <button type="submit" class="btn btn-p" style="min-width:150px;white-space:nowrap" id="wl-btn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      Claim My Spot
+    </button>
+  </form>
+  <div class="wl-type rv d3">
+    <label class="wl-radio"><input type="radio" name="interest-display" value="individual" checked /> Individual Athlete</label>
+    <label class="wl-radio"><input type="radio" name="interest-display" value="gym" /> Gym / Club Owner</label>
+    <label class="wl-radio"><input type="radio" name="interest-display" value="investor" /> Investor / Partner</label>
+  </div>
+  <div class="wl-success" id="wl-success">You're on the list! We'll reach out when FitHit launches. Get ready.</div>
+  <div class="wl-benefits rv d4">
+    <div class="wb"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Early access pricing</div>
+    <div class="wb"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Launch updates first</div>
+    <div class="wb"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>No spam, ever</div>
+    <div class="wb"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Cancel anytime</div>
+  </div>
+</div>
+
+<!-- ── FAQ ────────────────────────────────────────────────────── -->
+<section id="faq" class="section">
+  <div style="text-align:center;margin-bottom:44px">
+    <div class="tag rv" style="justify-content:center">FAQ</div>
+    <h2 class="ttl rv d1" style="text-align:center">GOT<br><span class="acc">QUESTIONS?</span></h2>
+  </div>
+  <div class="faq-list">
+    <div class="fq"><button class="fq-q" onclick="toggleFaq(this)">When will FitHit be available?<svg class="fq-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button><div class="fq-a">FitHit is in development and targeting a launch to early access partners later this year. Join the waitlist to be notified the moment we're ready and to secure priority access and launch pricing.</div></div>
+    <div class="fq"><button class="fq-q" onclick="toggleFaq(this)">How does the QR login work?<svg class="fq-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button><div class="fq-a">The kiosk shows a unique QR code on its screen. Open the FitHit app on your phone and scan it. Your fighter profile — stats, history, rankings — loads onto the kiosk in seconds. No typing required, and it works perfectly with boxing gloves on.</div></div>
+    <div class="fq"><button class="fq-q" onclick="toggleFaq(this)">Can multiple people use the same kiosk?<svg class="fq-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button><div class="fq-a">Yes. Users switch by scanning their own QR code. There's also a dedicated 1v1 battle mode where two fighters compete simultaneously — the kiosk tracks both and declares a winner at the end of each round.</div></div>
+    <div class="fq"><button class="fq-q" onclick="toggleFaq(this)">Does it require internet?<svg class="fq-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button><div class="fq-a">Internet is required for QR login, profile syncing, and leaderboard features. Quick Start sessions work offline — users can train without logging in. A stable Wi-Fi or Ethernet connection is recommended for the full experience.</div></div>
+    <div class="fq"><button class="fq-q" onclick="toggleFaq(this)">How do I enquire about getting FitHit for my gym?<svg class="fq-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button><div class="fq-a">Join the waitlist above and select "Gym / Club Owner". Our team will reach out directly to discuss placement, pricing, and early access partnership options. We're actively looking for flagship partners ahead of launch.</div></div>
+    <div class="fq"><button class="fq-q" onclick="toggleFaq(this)">What kind of ongoing support is included?<svg class="fq-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button><div class="fq-a">All FitHit units come with remote monitoring, automatic software updates, and dedicated partner support. Our team can diagnose and resolve most issues remotely without requiring on-site visits.</div></div>
+  </div>
+</section>
+
+<!-- ── FOOTER ─────────────────────────────────────────────────── -->
+<footer>
+  <div class="foot-inner">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <a href="#" class="nav-logo"><img src="logo.png" alt="FitHit" onerror="this.style.display='none'" style="height:28px"/><span class="nav-logo-txt">FITHIT</span></a>
+        <p>The smart boxing kiosk that tracks every punch, coaches every move, and syncs your stats to the cloud. Built for gyms, clubs, and training camps worldwide.</p>
+      </div>
+      <div class="foot-col"><h4>Product</h4><ul><li><a href="#in-session">Experience</a></li><li><a href="#features">Features</a></li><li><a href="#perf">Performance</a></li><li><a href="#how">How It Works</a></li></ul></div>
+      <div class="foot-col"><h4>Company</h4><ul><li><a href="#">About</a></li><li><a href="#">Blog</a></li><li><a href="#">Press</a></li><li><a href="#">Careers</a></li></ul></div>
+      <div class="foot-col"><h4>Connect</h4><ul><li><a href="#waitlist">Join Waitlist</a></li><li><a href="#faq">FAQ</a></li><li><a href="mailto:hello@fithit.io">hello@fithit.io</a></li></ul></div>
+    </div>
+    <div class="foot-bottom">
+      <span class="foot-copy">&copy; 2026 FitHit. All rights reserved.</span>
+      <div class="foot-socials">
+        <a href="#" class="soc" aria-label="Instagram"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+        <a href="#" class="soc" aria-label="X / Twitter"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></a>
+        <a href="#" class="soc" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="none"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="2" y="9" width="4" height="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="4" cy="4" r="2" stroke="currentColor" stroke-width="1.8"/></svg></a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── HELPERS ───────────────────────────────────────────────────
+function scroll2(sel){ document.querySelector(sel)?.scrollIntoView({behavior:'smooth'}); }
+
+// ── SCROLL PROGRESS + NAV ────────────────────────────────────
+const bar = document.getElementById('progress-bar');
+const navEl = document.getElementById('nav');
+window.addEventListener('scroll', ()=>{
+  const s = window.scrollY, h = document.body.scrollHeight - window.innerHeight;
+  bar.style.width = (s/h*100)+'%';
+  navEl.classList.toggle('scrolled', s > 60);
+}, {passive:true});
+
+// ── REVEAL ON SCROLL ─────────────────────────────────────────
+const rvEls = document.querySelectorAll('.rv');
+const rvObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('on'); rvObs.unobserve(e.target); } });
+},{threshold:0.1});
+rvEls.forEach(el=>rvObs.observe(el));
+
+// ── COUNTER ANIMATION ────────────────────────────────────────
+function animCount(el, target){
+  let start=0; const dur=1600;
+  const step=ts=>{ if(!start)start=ts; const p=Math.min((ts-start)/dur,1); const e=1-Math.pow(1-p,3); el.textContent=Math.floor(e*target).toLocaleString(); if(p<1)requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+const cntObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting){ animCount(e.target, parseInt(e.target.dataset.count)); cntObs.unobserve(e.target); } });
+},{threshold:.5});
+document.querySelectorAll('[data-count]').forEach(el=>cntObs.observe(el));
+
+// ── FIGHT UI SIMULATION ENGINE ───────────────────────────────
+const SVGs = {
+  punch: `<svg viewBox="0 0 40 40" fill="none"><rect x="9" y="16" width="22" height="13" rx="6" fill="#7F77DD"/><rect x="11" y="11" width="7" height="9" rx="3.5" fill="#AFA9EC"/><rect x="19" y="11" width="6" height="8" rx="3" fill="#AFA9EC"/><rect x="26" y="12" width="5" height="7" rx="2.5" fill="#AFA9EC"/><path d="M6 20 L9 20" stroke="#9F3FCC" stroke-width="3" stroke-linecap="round"/></svg>`,
+  duck:  `<svg viewBox="0 0 40 40" fill="none"><path d="M8 15 L20 28 L32 15" stroke="#9F3FCC" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 10 L27 10" stroke="#9F3FCC" stroke-width="2" stroke-linecap="round" opacity=".45"/></svg>`,
+  swerveL:`<svg viewBox="0 0 40 40" fill="none"><path d="M30 20 L10 20" stroke="#5DCAA5" stroke-width="3.5" stroke-linecap="round"/><path d="M17 13 L10 20 L17 27" stroke="#5DCAA5" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="33" cy="20" r="4" fill="#5DCAA5" opacity=".35"/></svg>`,
+  swerveR:`<svg viewBox="0 0 40 40" fill="none"><path d="M10 20 L30 20" stroke="#5DCAA5" stroke-width="3.5" stroke-linecap="round"/><path d="M23 13 L30 20 L23 27" stroke="#5DCAA5" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7" cy="20" r="4" fill="#5DCAA5" opacity=".35"/></svg>`,
+};
+const CUES = [
+  {k:'punch',cls:'cue-punch',word:'PUNCH',sub:'Hit the pad',col:'#fff'},
+  {k:'duck', cls:'cue-duck', word:'DUCK', sub:'Drop and evade',col:'#CF8FFF'},
+  {k:'swerveL',cls:'cue-sl',word:'SWERVE LEFT',sub:'Lean and roll left',col:'#5DCAA5'},
+  {k:'swerveR',cls:'cue-sr',word:'SWERVE RIGHT',sub:'Lean and roll right',col:'#5DCAA5'},
+];
+let combo=4, hits=24, misses=3, pScore=842, bigScore=842;
+let pSecs=83, bigSecs=79;
+const TOTAL_SECS=120;
+
+// Helper: set cue on an action element
+// Works for both fs-action-main (hero + iss) and any action container
+function setCue(actionEl, iconEl, wordEl, subEl, cue){
+  // Strip existing cue/state classes, keep base class
+  const base = actionEl.className.split(' ').filter(c=>!c.startsWith('cue-')&&!c.startsWith('st-')).join(' ');
+  actionEl.className = base+' '+cue.cls;
+  iconEl.innerHTML = SVGs[cue.k];
+  wordEl.textContent = cue.word; wordEl.style.color = cue.col;
+  if(subEl) subEl.textContent = cue.sub;
+}
+function flashScore(el, type){ el.classList.remove('flash-hit','flash-miss'); void el.offsetWidth; el.classList.add(type==='hit'?'flash-hit':'flash-miss'); setTimeout(()=>el.classList.remove('flash-hit','flash-miss'),300); }
+function showPts(el, pts, miss){ el.textContent=miss?'MISS':'+'+pts+' pts'; el.className='fs-pts show'+(miss?' miss':''); setTimeout(()=>el.classList.remove('show'),950); }
+function showBfPts(el, pts, miss){ el.textContent=miss?'MISS':'+'+pts+' pts'; el.className='fs-pts show'+(miss?' miss':''); setTimeout(()=>el.classList.remove('show'),950); }
+
+// Cue cycle
+let cueIdx=0;
+function nextCue(){
+  cueIdx=(cueIdx+1)%CUES.length; const c=CUES[cueIdx];
+  // Preview
+  const pa=document.getElementById('p-action'), pi=document.getElementById('p-icon'), pw=document.getElementById('p-word');
+  if(pa&&pi&&pw) setCue(pa,pi,pw,null,c);
+  // Big
+  const ba=document.getElementById('big-action'), bi=document.getElementById('big-icon'), bw=document.getElementById('big-word'), bs=document.getElementById('big-sub');
+  if(ba&&bi&&bw) setCue(ba,bi,bw,bs,c);
+  // After 1.2s, simulate a hit
+  setTimeout(()=>{
+    const pts=Math.round((65+Math.random()*35)*combo*0.14);
+    hits++; combo=Math.min(combo+1,8);
+    pScore+=pts; bigScore+=pts;
+    // Update preview
+    if(pa) pa.className=pa.className.replace(/cue-\S+/g,'').trim()+' st-hit';
+    if(pw){ pw.textContent='NICE!'; pw.style.color='#5DCAA5'; }
+    const pp=document.getElementById('p-pts'), psc=document.getElementById('p-score');
+    const bpp=document.getElementById('big-pts'), bsc=document.getElementById('big-score');
+    if(pp) showPts(pp,pts,false);
+    if(psc){ psc.textContent=pScore.toLocaleString(); flashScore(psc,'hit'); }
+    if(bpp) showBfPts(bpp,pts,false);
+    if(bsc){ bsc.textContent=bigScore.toLocaleString(); flashScore(bsc,'hit'); }
+    // Update hits
+    const ph=document.getElementById('p-hits'), bh=document.getElementById('big-hits');
+    if(ph) ph.textContent=hits; if(bh) bh.textContent=hits;
+    // Update power
+    const poVal=Math.floor(65+Math.random()*30);
+    const pp2=document.getElementById('p-power'), bp2=document.getElementById('big-power');
+    if(pp2) pp2.textContent=poVal; if(bp2) bp2.textContent=poVal;
+    // Update reaction
+    const rVal=(Math.random()*.3+.22).toFixed(2);
+    const pr=document.getElementById('p-react'), br=document.getElementById('big-react');
+    if(pr) pr.textContent=rVal; if(br) br.textContent=rVal;
+    // Update hero badge hit count
+    const hc=document.getElementById('hero-hit-count');
+    if(hc){ const cur=parseInt(hc.textContent.replace(/,/g,''))||2840; hc.textContent=(cur+Math.floor(Math.random()*5+1)).toLocaleString(); }
+    // Reset after 0.8s
+    setTimeout(()=>nextCue(), 2400);
+  },1300);
+}
+
+// Timer countdown (both previews)
+setInterval(()=>{
+  if(pSecs>0){ pSecs--; const t=String(Math.floor(pSecs/60)).padStart(2,'0')+':'+String(pSecs%60).padStart(2,'0'); const el=document.getElementById('p-timer'); if(el){ el.textContent=t; el.className='fs-timer-num'+(pSecs<=15?' urgent':''); } const pb=document.getElementById('p-pbar'); if(pb) pb.style.width=Math.round(pSecs/TOTAL_SECS*100)+'%'; }
+  if(bigSecs>0){ bigSecs--; const t=String(Math.floor(bigSecs/60)).padStart(2,'0')+':'+String(bigSecs%60).padStart(2,'0'); const el=document.getElementById('big-timer'); if(el){ el.textContent=t; el.className='bf-timer-num'+(bigSecs<=15?' urgent':''); } const pb=document.getElementById('big-pbar'); if(pb) pb.style.width=Math.round(bigSecs/TOTAL_SECS*100)+'%'; }
+},1000);
+
+// Start cue cycle after a short delay
+setTimeout(nextCue, 2000);
+
+// ── FAQ ──────────────────────────────────────────────────────
+function toggleFaq(btn){
+  const item=btn.closest('.fq'), isOpen=item.classList.contains('open');
+  document.querySelectorAll('.fq.open').forEach(i=>i.classList.remove('open'));
+  if(!isOpen) item.classList.add('open');
+}
+
+// ── WAITLIST FORM ────────────────────────────────────────────
+async function handleWaitlist(e){
+  e.preventDefault();
+  const form = e.target;
+  const btn  = document.getElementById('wl-btn');
+  const succ = document.getElementById('wl-success');
+  const err  = document.getElementById('wl-error');
+  const email = form.querySelector('[name="email"]').value;
+  // Get selected interest from display radios
+  const interestChecked = document.querySelector('[name="interest-display"]:checked');
+  const interest = interestChecked ? interestChecked.value : 'individual';
+
+  btn.disabled = true; btn.textContent = 'Joining...';
+  err.style.display = 'none';
+
+  try {
+    // First try Netlify Function (if deployed)
+    let saved = false;
+    try {
+      const res = await fetch('/.netlify/functions/subscribe', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ email, interest })
+      });
+      if(res.ok) saved = true;
+    } catch(_){}
+
+    // Fallback: submit to Netlify Forms (works on Netlify deploy)
+    if(!saved){
+      const fd = new FormData();
+      fd.append('form-name','waitlist');
+      fd.append('email', email);
+      fd.append('interest', interest);
+      const r = await fetch('/', {method:'POST', body: fd});
+      if(r.ok) saved=true;
+    }
+
+    form.style.display='none';
+    document.querySelector('.wl-type').style.display='none';
+    succ.style.display='block';
+  } catch(ex){
+    btn.disabled=false; btn.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg> Claim My Spot';
+    err.style.display='block';
+    console.error(ex);
+  }
+}
+
+// ── REDUCED MOTION ───────────────────────────────────────────
+if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+  document.querySelectorAll('.orb,.fu-glow,.fu-rings,.fu-badge').forEach(el=>el.style.animation='none');
+}
+</script>
+</body>
+</html>

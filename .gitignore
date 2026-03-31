@@ -1,0 +1,25 @@
+# Node (for local function testing)
+node_modules/
+.node_history
+
+# Environment variables — NEVER commit these
+.env
+.env.local
+.env.*.local
+
+# Netlify local dev cache
+.netlify/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor directories
+.vscode/
+.idea/
+*.sublime-workspace
+
+# Logs
+*.log
+npm-debug.log*
