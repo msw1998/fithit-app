@@ -12,7 +12,7 @@
     /* ── RESET ──────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
-    body { font-family: 'Inter', sans-serif; background: #0D0B1A; color: #E8E6F8; overflow-x: hidden; line-height: 1.6; }
+    body { font-family: 'Inter', sans-serif; background: #1A1730; color: #E8E6F8; overflow-x: hidden; line-height: 1.6; }
     img { display: block; max-width: 100%; }
     a { text-decoration: none; color: inherit; }
 
@@ -75,7 +75,7 @@
 
     /* Left: logo */
     .nav-left { display:flex;align-items:center;gap:11px; }
-    .nav-logo-img { height:36px;width:auto;flex-shrink:0; }
+    .nav-logo-img { height:44px;width:auto;flex-shrink:0;object-fit:contain; }
     .nav-brand { font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;letter-spacing:.06em;color:#fff;text-transform:uppercase;white-space:nowrap; }
 
     /* Centre: links */
@@ -220,9 +220,10 @@
 
     /* Scroll indicator */
     .hero-scroll {
-      position:absolute;bottom:36px;left:50%;transform:translateX(-50%);
-      z-index:3;display:flex;flex-direction:column;align-items:center;gap:8px;
+      position:absolute;bottom:0px;left:50%;transform:translateX(-50%);
+      z-index:10;display:flex;flex-direction:column;align-items:center;gap:8px;
       opacity:0;animation:wordIn .8s var(--ease) 1.6s forwards;
+      pointer-events:none;
     }
     .scroll-label { font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.35); }
     .scroll-arrow { width:1px;height:40px;background:linear-gradient(to bottom,rgba(255,255,255,.3),transparent);animation:scrollArrow 2s ease-in-out infinite; }
@@ -254,67 +255,48 @@
     .product-card {
       position:relative;border-radius:20px;overflow:hidden;
       aspect-ratio:2/3;cursor:pointer;
-      border:1px solid var(--border);
+      background:#fff;
+      border:1px solid rgba(255,255,255,.15);
       transition:all .45s var(--ease);
+      display:flex;flex-direction:column;
     }
-    .product-card:hover { transform:translateY(-8px);border-color:var(--border-h);box-shadow:0 40px 80px rgba(0,0,0,.6); }
-    .product-card:hover .pc-img { transform:scale(1.05); }
+    .product-card:hover { transform:translateY(-8px);box-shadow:0 40px 80px rgba(0,0,0,.45); }
 
-    .pc-img {
-      position:absolute;inset:0;width:100%;height:100%;
-      transition:transform .6s var(--ease);
+    /* Decorative top colour band per card */
+    .pc-band {
+      height:180px;flex-shrink:0;position:relative;overflow:hidden;
     }
-    /* Pro card bg */
-    .pc-pro .pc-img {
-      background:
-        radial-gradient(ellipse 80% 60% at 50% 20%, rgba(60,52,137,.8) 0%, transparent 60%),
-        linear-gradient(160deg, #1a1440 0%, #0a0818 100%);
-    }
-    /* Home card bg */
-    .pc-home .pc-img {
-      background:
-        radial-gradient(ellipse 80% 60% at 50% 20%, rgba(127,119,221,.4) 0%, transparent 60%),
-        linear-gradient(160deg, #141430 0%, #0a0818 100%);
-    }
-    /* Accessible card bg */
-    .pc-accessible .pc-img {
-      background:
-        radial-gradient(ellipse 80% 60% at 50% 20%, rgba(29,158,117,.35) 0%, transparent 60%),
-        linear-gradient(160deg, #0d1f1a 0%, #0a0818 100%);
-    }
+    .pc-pro .pc-band    { background:linear-gradient(135deg,#26215C 0%,#3C3489 100%); }
+    .pc-home .pc-band   { background:linear-gradient(135deg,#3C3489 0%,#7F77DD 100%); }
+    .pc-open .pc-band   { background:linear-gradient(135deg,#5DCAA5 0%,#3C3489 100%); }
 
-    /* Decorative boxing graphic in each card */
+    /* Subtle graphic inside band */
     .pc-graphic {
       position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-      opacity:.12;
+      opacity:.18;
     }
-    .pc-graphic svg { width:60%;height:60%; }
-
-    .pc-gradient {
-      position:absolute;inset:0;
-      background:linear-gradient(to top, rgba(0,0,0,.92) 0%, rgba(0,0,0,.3) 50%, transparent 100%);
-    }
+    .pc-graphic svg { width:55%;height:55%;stroke:#fff; }
 
     .pc-content {
-      position:absolute;bottom:0;left:0;right:0;
-      padding:32px 28px;
+      flex:1;display:flex;flex-direction:column;
+      padding:28px 28px 32px;
     }
     .pc-badge {
       display:inline-flex;align-items:center;gap:6px;
-      background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
-      border-radius:100px;padding:4px 12px;margin-bottom:14px;
-      font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.6);
+      border-radius:100px;padding:4px 12px;margin-bottom:16px;
+      font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+      align-self:flex-start;
     }
-    .pc-badge.coming { background:rgba(127,119,221,.15);border-color:rgba(127,119,221,.3);color:var(--lavender); }
-    .pc-badge.coming-hit { background:rgba(93,202,165,.1);border-color:rgba(93,202,165,.25);color:var(--hit); }
-    .pc-name { font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:.02em;line-height:1;margin-bottom:10px; }
-    .pc-desc { font-size:13px;color:rgba(255,255,255,.65);line-height:1.55;margin-bottom:20px; }
+    .pc-badge.coming       { background:rgba(60,52,137,.1);border:1px solid rgba(60,52,137,.25);color:var(--indigo); }
+    .pc-badge.coming-open  { background:rgba(93,202,165,.12);border:1px solid rgba(93,202,165,.3);color:#1d9e75; }
+    .pc-name { font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:900;color:var(--navy);text-transform:uppercase;letter-spacing:.02em;line-height:1;margin-bottom:10px; }
+    .pc-desc { font-size:13px;color:#5a5580;line-height:1.6;margin-bottom:24px;flex:1; }
     .pc-cta {
       display:inline-flex;align-items:center;gap:7px;
       font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
-      color:#fff;
+      color:var(--indigo);
     }
-    .pc-cta svg { width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .25s; }
+    .pc-cta svg { width:14px;height:14px;stroke:var(--indigo);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .25s; }
     .product-card:hover .pc-cta svg { transform:translateX(4px); }
 
     /* Shop link above grid */
@@ -530,8 +512,9 @@
     @media(max-width:1100px){
       .iss-body { grid-template-columns:1fr; }
       .iss-ui-wrap { position:static;max-width:440px;margin:0 auto; }
-      .products-grid { grid-template-columns:1fr; gap:16px; }
-      .product-card { aspect-ratio:16/9; }
+      .products-grid { grid-template-columns:1fr 1fr; gap:16px; }
+      .product-card { aspect-ratio:auto; }
+      .pc-band { height:140px; }
       .app-options { grid-template-columns:1fr; max-width:360px; }
       .foot-top { grid-template-columns:1fr 1fr;gap:36px; }
     }
@@ -541,9 +524,15 @@
       .nav-centre { display:none; }
       .nav-hamburger { display:block; }
       #hero { padding:0; }
+      .hero-scroll { display:none; }
       #trust { padding:22px 20px;gap:16px;flex-direction:column; }
       .trust-items { gap:20px;justify-content:center; }
-      #products { padding:70px 20px; }
+      #products { padding:60px 20px; }
+      .products-grid { grid-template-columns:1fr;gap:16px; }
+      .product-card { aspect-ratio:auto; }
+      .pc-band { height:160px; }
+      .pc-content { padding:22px 22px 26px; }
+      .pc-name { font-size:28px; }
       .section { padding:70px 20px; }
       .iss-wrap { padding:70px 20px; }
       .iss-cn { font-size:42px;min-width:38px; }
@@ -628,13 +617,13 @@
     </div>
 
     <div class="hero-words">
-      <span class="hero-word">COMPETITIVE.</span>
-      <span class="hero-word">SOCIAL.</span>
-      <span class="hero-word">INTERACTIVE.</span>
+      <span class="hero-word">TRAIN.</span>
+      <span class="hero-word">COMPETE.</span>
+      <span class="hero-word">REPEAT.</span>
     </div>
 
     <p class="hero-tagline">
-      FitHit is the smart boxing kiosk that tracks every strike, coaches every move, and syncs your performance to the cloud. Real boxing. Real data. Real results.
+      A new kind of training — powered by real-time feedback, performance data, and competition.
     </p>
 
     <div class="hero-ctas">
@@ -675,32 +664,31 @@
 <div id="products">
   <div class="products-inner">
     <div class="products-header">
-      <div class="tag rv" style="justify-content:center">Shop</div>
-      <h2 class="ttl rv d1" style="text-align:center">CHOOSE YOUR<br><span class="acc">FIGHT</span></h2>
-      <p class="sub rv d2" style="text-align:center">Three ways to experience Get Fit Hit. Built for every environment, every fighter, every ambition.</p>
+      <h2 class="ttl rv d1" style="text-align:center">PICK A <span class="acc">FIGHT</span></h2>
+      <p class="sub rv d2" style="text-align:center">Designed for every environment. Built for every ambition.</p>
     </div>
 
     <div class="products-grid">
 
       <!-- PRO -->
       <div class="product-card pc-pro rv d1">
-        <div class="pc-img"></div>
-        <div class="pc-graphic">
-          <svg viewBox="0 0 200 200" fill="none" stroke="white" stroke-width="1">
-            <circle cx="100" cy="100" r="80" opacity=".3"/>
-            <circle cx="100" cy="100" r="55" opacity=".2"/>
-            <path d="M70 80 L100 110 L130 80" opacity=".4"/>
-            <line x1="100" y1="30" x2="100" y2="170" opacity=".15"/>
-            <line x1="30" y1="100" x2="170" y2="100" opacity=".15"/>
-          </svg>
+        <div class="pc-band">
+          <div class="pc-graphic">
+            <svg viewBox="0 0 200 200" fill="none" stroke-width="1.5">
+              <circle cx="100" cy="100" r="80" opacity=".5"/>
+              <circle cx="100" cy="100" r="55" opacity=".35"/>
+              <path d="M70 80 L100 110 L130 80" opacity=".6"/>
+              <line x1="100" y1="30" x2="100" y2="170" opacity=".2"/>
+              <line x1="30" y1="100" x2="170" y2="100" opacity=".2"/>
+            </svg>
+          </div>
         </div>
-        <div class="pc-gradient"></div>
         <div class="pc-content">
-          <div class="pc-badge">Prototype</div>
+          <div class="pc-badge coming">Coming Soon</div>
           <div class="pc-name">Pro</div>
           <div class="pc-desc">The definitive Get Fit Hit experience. Commercial-grade kiosk built for gyms, boxing clubs, and training centres. Full analytics, multi-player, cloud connected.</div>
           <div class="pc-cta">
-            Coming Soon
+            Learn More
             <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </div>
         </div>
@@ -708,44 +696,45 @@
 
       <!-- HOME -->
       <div class="product-card pc-home rv d2">
-        <div class="pc-img"></div>
-        <div class="pc-graphic">
-          <svg viewBox="0 0 200 200" fill="none" stroke="white" stroke-width="1">
-            <path d="M100 30 L170 90 L170 170 L30 170 L30 90 Z" opacity=".3"/>
-            <path d="M70 170 L70 120 L130 120 L130 170" opacity=".3"/>
-            <circle cx="100" cy="80" r="20" opacity=".2"/>
-          </svg>
+        <div class="pc-band">
+          <div class="pc-graphic">
+            <svg viewBox="0 0 200 200" fill="none" stroke-width="1.5">
+              <path d="M100 30 L170 90 L170 170 L30 170 L30 90 Z" opacity=".5"/>
+              <path d="M70 170 L70 120 L130 120 L130 170" opacity=".4"/>
+              <circle cx="100" cy="80" r="20" opacity=".35"/>
+            </svg>
+          </div>
         </div>
-        <div class="pc-gradient"></div>
         <div class="pc-content">
           <div class="pc-badge coming">Coming Soon</div>
           <div class="pc-name">Home</div>
           <div class="pc-desc">Bring the Get Fit Hit experience home. Same intelligence, same tracking, designed for your space. Train on your schedule, compete with the world.</div>
           <div class="pc-cta">
-            Notify Me
+            Learn More
             <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </div>
         </div>
       </div>
 
-      <!-- ACCESSIBLE -->
-      <div class="product-card pc-accessible rv d3">
-        <div class="pc-img"></div>
-        <div class="pc-graphic">
-          <svg viewBox="0 0 200 200" fill="none" stroke="white" stroke-width="1">
-            <circle cx="100" cy="50" r="18" opacity=".35"/>
-            <path d="M100 70 L100 130" opacity=".3" stroke-width="2"/>
-            <path d="M70 90 L130 90" opacity=".3" stroke-width="2"/>
-            <path d="M80 130 L100 160 L120 130" opacity=".3"/>
-          </svg>
+      <!-- OPEN -->
+      <div class="product-card pc-open rv d3">
+        <div class="pc-band">
+          <div class="pc-graphic">
+            <svg viewBox="0 0 200 200" fill="none" stroke-width="1.5">
+              <circle cx="100" cy="50" r="18" opacity=".55"/>
+              <path d="M100 70 L100 130" opacity=".4" stroke-width="2"/>
+              <path d="M70 90 L130 90" opacity=".4" stroke-width="2"/>
+              <path d="M80 130 L100 160 L120 130" opacity=".45"/>
+              <circle cx="100" cy="100" r="70" opacity=".2"/>
+            </svg>
+          </div>
         </div>
-        <div class="pc-gradient"></div>
         <div class="pc-content">
-          <div class="pc-badge coming-hit">Coming Soon</div>
-          <div class="pc-name">Accessible</div>
+          <div class="pc-badge coming-open">Coming Soon</div>
+          <div class="pc-name">Open</div>
           <div class="pc-desc">Designed for everyone. Get Fit Hit adapted for all abilities and environments. Because the right to train, compete, and win belongs to everyone.</div>
           <div class="pc-cta">
-            Notify Me
+            Learn More
             <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </div>
         </div>
@@ -765,7 +754,7 @@
 <!-- ════════════════════════════════════════════════════════════
      IN SESSION SHOWCASE
 ════════════════════════════════════════════════════════════ -->
-<div id="in-session">
+<div id="in-session" style="display:none">
   <div class="iss-wrap">
     <div class="iss-header">
       <div class="tag rv" style="justify-content:center">Live Experience</div>
@@ -957,7 +946,7 @@
 <!-- ════════════════════════════════════════════════════════════
      FAQ
 ════════════════════════════════════════════════════════════ -->
-<section id="faq" class="section">
+<section id="faq" class="section" style="display:none">
   <div style="text-align:center;margin-bottom:44px">
     <div class="tag rv" style="justify-content:center">FAQ</div>
     <h2 class="ttl rv d1" style="text-align:center">GOT<br><span class="acc">QUESTIONS?</span></h2>
@@ -980,7 +969,7 @@
       <!-- Brand -->
       <div class="foot-brand-col">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-          <img src="logo.png" alt="Get Fit Hit" style="height:30px" onerror="this.style.display='none'" />
+          <img src="logo.png" alt="Get Fit Hit" style="height:36px;object-fit:contain" onerror="this.style.display='none'" />
           <span class="nav-brand">Get Fit Hit</span>
         </div>
         <p>Smart boxing technology that tracks every strike, coaches every move, and syncs your performance to the cloud — built for gyms, clubs, and champions worldwide.</p>
